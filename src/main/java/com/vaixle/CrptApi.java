@@ -4,6 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.TimedSemaphore;
 
 import java.io.IOException;
@@ -19,14 +25,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
+@Getter
+@Setter
 public class CrptApi {
 
-    private static final HttpClient HTTP_CLIENT;
+    static HttpClient HTTP_CLIENT;
 
-    private final ExecutorService threadService;
+    ExecutorService threadService;
 
-    private final TimedSemaphore timedSemaphore;
+    TimedSemaphore timedSemaphore;
 
     public CrptApi() {
         this(TimeUnit.SECONDS, 100);
@@ -40,7 +49,14 @@ public class CrptApi {
     public static void main(String[] args) {
         CrptApi crptApi = new CrptApi(TimeUnit.SECONDS, 4);
     }
-
+    /**
+     * Before sending request we have to pass authentication
+     * There are two steps.
+     * 1) Get key
+     * 2) Then we have to swap our key on token
+     * We have to use signature to sign our data
+     * TODO: https://markirovka.demo.crpt.tech/ doesn't work, i can't get signature
+     */
     private static TokenResponse authenticate(String signature) {
         KeyResponse keyResponse = getKey();
         if (Objects.isNull(keyResponse))
@@ -52,6 +68,9 @@ public class CrptApi {
         return tokenResponse;
     }
 
+    /**
+     * Send request to get key
+     */
     private static KeyResponse getKey() {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(GlobalProperties.URL_AUTHORIZATION))
@@ -63,11 +82,14 @@ public class CrptApi {
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     .readValue(response.body(), KeyResponse.class);
         } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
+            log.error("Error get key", e);
         }
         return null;
     }
 
+    /**
+     * Send request to swap our key on token
+     */
     private static TokenResponse getToken(KeyResponse keyResponse) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -80,30 +102,39 @@ public class CrptApi {
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                     .readValue(response.body(), TokenResponse.class);
         } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
+            log.error("Error get token", e);
         }
         return null;
     }
 
+    /**
+     * A unified method of creating documents
+     */
     public void createDocumentGoodsProducedRussia(Document document, String signature) {
         TokenResponse tokenResponse = authenticate(signature);
-        threadService.submit(() -> sendRequest(document, signature, tokenResponse));
-    }
-
-    public void sendRequest(Document document, String signature, TokenResponse tokenResponse) {
         document.setSignature(signature);
         try {
-            timedSemaphore.acquire();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(GlobalProperties.URL_CREATE_DOCUMENT + document.getProductGroup()))
                     .header(GlobalProperties.HEADER_AUTHORIZATION, "Bearer " + tokenResponse.getToken())
                     .header(GlobalProperties.HEADER_CONTENT_TYPE, "application/json;charset=UTF-8")
                     .POST(HttpRequest.BodyPublishers.ofString(new ObjectMapper().writeValueAsString(document)))
                     .build();
-            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
+            threadService.submit(() -> sendRequest(request));
+        } catch (JsonProcessingException e) {
+            log.error("Error parse object as JSON", e);
         }
+    }
+
+    public HttpResponse<String> sendRequest(HttpRequest request) {
+        log.info("Sending request");
+        try {
+            timedSemaphore.acquire();
+            return HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException | IOException e) {
+            log.error("Error get response", e);
+        }
+        return null;
     }
 
     private static HttpClient configureHTTP() {
@@ -113,6 +144,7 @@ public class CrptApi {
     }
 
     static {
+        log.info("create HTTP client");
         HTTP_CLIENT = configureHTTP();
     }
 
@@ -153,66 +185,53 @@ public class CrptApi {
 
     }
 
+    @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
     private static class GlobalProperties {
 
-        private static final long PERIOD = 5;
+        static long PERIOD = 5;
 
-        private static final int THREADS = 4;
+        static int THREADS = 4;
 
-        private static final int CONNECT_TIMEOUT = 5;
+        static int CONNECT_TIMEOUT = 5;
 
-        private static final String URL_AUTHORIZATION = "https://ismp.crpt.ru/api/v3/auth/cert/key";
+        static String URL_AUTHORIZATION = "https://ismp.crpt.ru/api/v3/auth/cert/key";
 
-        private static final String URL_TOKEN = "https://ismp.crpt.ru/api/v3/auth/cert/";
+        static String URL_TOKEN = "https://ismp.crpt.ru/api/v3/auth/cert/";
 
-        private static final String URL_CREATE_DOCUMENT = "https://ismp.crpt.ru/api/v3/lk/documents/create?pg=";
+        static String URL_CREATE_DOCUMENT = "https://ismp.crpt.ru/api/v3/lk/documents/create?pg=";
 
-        private static final String HEADER_AUTHORIZATION = "Authorization";
+        static String HEADER_AUTHORIZATION = "Authorization";
 
-        private static final String HEADER_CONTENT_TYPE = "content-type";
+        static String HEADER_CONTENT_TYPE = "content-type";
 
     }
 
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    @Getter
+    @Setter
     private static class KeyResponse implements Serializable {
 
-        private static final long serialVersionUID = 1L;
+        static final long serialVersionUID = 1L;
 
-        private String uuid;
+        String uuid;
 
-        private String data;
-
-        public String getUuid() {
-            return uuid;
-        }
-
-        public void setUuid(String uuid) {
-            this.uuid = uuid;
-        }
-
-        public String getData() {
-            return data;
-        }
-
-        public void setData(String data) {
-            this.data = data;
-        }
+        String data;
     }
 
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    @Getter
+    @Setter
     private static class TokenResponse implements Serializable {
 
-        private static final long serialVersionUID = 1L;
+        static final long serialVersionUID = 1L;
 
-        private String token;
-
-        public String getToken() {
-            return token;
-        }
-
-        public void setToken(String token) {
-            this.token = token;
-        }
+        String token;
     }
 
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    @AllArgsConstructor
+    @Getter
+    @Setter
     public static class Document implements Serializable {
 
         private static final long serialVersionUID = 1L;
@@ -229,56 +248,5 @@ public class CrptApi {
         private String signature;
 
         private String type;
-
-        public Document() {
-        }
-
-        public Document(String documentFormat, String productDocument, String productGroup, String signature, String type) {
-            this.documentFormat = documentFormat;
-            this.productDocument = productDocument;
-            this.productGroup = productGroup;
-            this.signature = signature;
-            this.type = type;
-        }
-
-        public String getDocumentFormat() {
-            return documentFormat;
-        }
-
-        public void setDocumentFormat(String documentFormat) {
-            this.documentFormat = documentFormat;
-        }
-
-        public String getProductDocument() {
-            return productDocument;
-        }
-
-        public void setProductDocument(String productDocument) {
-            this.productDocument = productDocument;
-        }
-
-        public String getProductGroup() {
-            return productGroup;
-        }
-
-        public void setProductGroup(String productGroup) {
-            this.productGroup = productGroup;
-        }
-
-        public String getSignature() {
-            return signature;
-        }
-
-        public void setSignature(String signature) {
-            this.signature = signature;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
     }
 }
