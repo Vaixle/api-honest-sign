@@ -6,9 +6,15 @@ Test task for SELSUP
 
 ## Conntents:
 
+- [Main Technologies](#Main-technologies) 
 - [Task](#Task) 
     - [Requirments](#Requirments) 
 - [Solution](#Solution)
+
+### Main-technologies
+
+| **Backend**  |[![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=java&logoColor=white)](https://dev.java/) |
+|:------------:|:------------:|
 
 ### Task
 You need to implement in Java (you can use version 11) a class to work with the Honest Mark API.
@@ -33,7 +39,7 @@ Example:
 - The solution should be designed as one file com.vaixle.CrptApi.java. All additional classes that are used must be internal.
 
 ### Solution
-*IN PROGRESS*...
+[click](https://github.com/Vaixle/talkme-shop-api/blob/main/src/main/java/com/vaixle/talkme/repository/impl/AdmitadCredentialRepositoryImpl.java)
 
 
 
