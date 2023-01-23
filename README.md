@@ -39,7 +39,7 @@ Example:
 - The solution should be designed as one file com.vaixle.CrptApi.java. All additional classes that are used must be internal.
 
 ### Solution
-[click](https://github.com/Vaixle/talkme-shop-api/blob/main/src/main/java/com/vaixle/talkme/repository/impl/AdmitadCredentialRepositoryImpl.java)
+[click](https://github.com/Vaixle/api-honest-sign/blob/main/src/main/java/com/vaixle/CrptApi.java)
 
 
 
