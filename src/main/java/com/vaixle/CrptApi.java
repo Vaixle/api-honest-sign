@@ -147,11 +147,11 @@ public class CrptApi {
         log.info("create HTTP client");
         HTTP_CLIENT = configureHTTP();
     }
-
+    @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
     public static class GetKeyException extends RuntimeException implements Serializable {
 
-        private static final long serialVersionUID = 1L;
-        private static final String DEFAULT_MESSAGE = "Authorization error get key!";
+        static long serialVersionUID = 1L;
+        static String DEFAULT_MESSAGE = "Authorization error get key!";
 
         public GetKeyException() {
             super(DEFAULT_MESSAGE);
@@ -166,10 +166,11 @@ public class CrptApi {
         }
     }
 
+    @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
     public static class GetTokenException extends RuntimeException implements Serializable {
 
-        private static final long serialVersionUID = 1L;
-        private static final String DEFAULT_MESSAGE = "Authorization error get token!";
+        static long serialVersionUID = 1L;
+        static String DEFAULT_MESSAGE = "Authorization error get token!";
 
         public GetTokenException() {
             super(DEFAULT_MESSAGE);
