@@ -15,6 +15,7 @@ Test task for SELSUP
 
 | **Backend**  |[![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=java&logoColor=white)](https://dev.java/) |
 |:------------:|:------------:|
+| **Build tool**  |![Apache Maven](https://img.shields.io/badge/Apache%20Maven-C71A36?style=for-the-badge&logo=Apache%20Maven&logoColor=white) |
 
 ### Task
 You need to implement in Java (you can use version 11) a class to work with the Honest Mark API.
