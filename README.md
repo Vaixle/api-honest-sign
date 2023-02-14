@@ -1,7 +1,7 @@
 # api-honest-sign
 Test task for SELSUP
 
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/inactive.svg)](https://www.repostatus.org/#inactive)
 [![GitHub](https://img.shields.io/github/license/vaixle/api-honest-sign)](https://github.com/Vaixle/api-honest-sign/blob/main/LICENSE)
 
 ## Conntents:
